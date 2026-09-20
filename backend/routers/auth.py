@@ -44,6 +44,11 @@ async def exchange(body: SessionExchange, request: Request, response: Response):
         raise HTTPException(401, "इस लॉगिन लिंक का उपयोग हो चुका है। दोबारा Google लॉगिन करें।")
     profile = {"name": identity.get("name") or email.split("@")[0],
                "picture": identity.get("picture") or ""}
+    # The designated admin account gets full access automatically on every login —
+    # no separate password step needed once ADMIN_EMAIL matches.
+    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    if admin_email and email == admin_email:
+        profile["is_admin"] = True
     try:
         user = await db.users.find_one_and_update(
             {"email": email}, {"$set": profile, "$setOnInsert": {

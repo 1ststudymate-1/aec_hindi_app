@@ -107,13 +107,61 @@ def old_admin_email_cookie():
     _cleanup_fixture(tag)
 
 
+def _make_session_for_existing_user(email: str, fixture_tag: str):
+    """Attach a fresh, temporary session to a user that ALREADY exists (real production
+    admin account) without touching/duplicating the user document (email is unique)."""
+    script = f"""
+import asyncio, secrets, sys
+sys.path.insert(0, {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))!r})
+from lib.db import db, ensure_indexes
+from lib.access import token_hash, utcnow
+from datetime import timedelta
+
+async def main():
+    await ensure_indexes()
+    user = await db.users.find_one({{"email": {email!r}}})
+    assert user is not None, "expected pre-existing real admin user to already exist"
+    token = secrets.token_urlsafe(32)
+    await db.user_sessions.insert_one({{"user_id": user["user_id"], "token_hash": token_hash(token),
+        "expires_at": utcnow() + timedelta(days=1), "test_fixture": {fixture_tag!r}}})
+    print(token)
+
+asyncio.run(main())
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        capture_output=True, text=True, timeout=60,
+    )
+    assert result.returncode == 0, f"fixture setup failed for {email}: {result.stderr}"
+    return result.stdout.strip().splitlines()[-1]
+
+
+def _cleanup_session_only(fixture_tag: str):
+    cleanup_script = f"""
+import asyncio, sys
+sys.path.insert(0, {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))!r})
+from lib.db import db
+
+async def main():
+    await db.user_sessions.delete_many({{"test_fixture": {fixture_tag!r}}})
+
+asyncio.run(main())
+"""
+    subprocess.run([sys.executable, "-c", cleanup_script],
+                    cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    capture_output=True, text=True, timeout=60)
+
+
 @pytest.fixture(scope="module")
 def admin_cookie():
-    """Temporary kijitechnology@gmail.com (current ADMIN_EMAIL) user + session."""
-    tag = "tscheck-admin-unlock-new"
-    token = _make_session(NEW_ADMIN_EMAIL, tag)
+    """Fresh session for the REAL, already-existing kijitechnology@gmail.com admin user
+    (current ADMIN_EMAIL). Does not create/duplicate the user document (email is unique);
+    only the temporary session doc is cleaned up afterward."""
+    tag = "tscheck-admin-unlock-new-session"
+    token = _make_session_for_existing_user(NEW_ADMIN_EMAIL, tag)
     yield token
-    _cleanup_fixture(tag)
+    _cleanup_session_only(tag)
 
 
 def test_non_admin_account_rejected_even_with_correct_password(non_admin_cookie):

@@ -1,0 +1,80 @@
+{
+  "iteration": 4,
+  "mode": "generate",
+  "summary": "Verified the auto-admin-on-login fix for kijitechnology@gmail.com: with a fresh session on the real, already-backfilled admin user, GET /api/auth/me immediately returns has_access=true/access_mode='admin' with NO admin-unlock call, GET /api/topics returns 200, and the app's paywall gate (RequirePaid) lets the admin straight into '/' instead of redirecting to /membership. A different (non-admin) email does NOT get this treatment: has_access=false, access_mode=null, /api/topics 403, and the paywall gate redirects it to /membership. The admin-unlock password fallback for the same admin email still works (200/admin on correct password, 403 on wrong password) -- confirmed via updated existing test file.",
+  "passed": 8,
+  "failed": 0,
+  "checks": [
+    {
+      "criterion": "GET /api/auth/me for kijitechnology@gmail.com session returns has_access=true, access_mode='admin' with no admin-unlock call; GET /api/topics returns 200.",
+      "name": "test_tscheck_auto_admin_on_login.py::test_admin_email_gets_auto_admin_on_session_with_no_unlock_call",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "Fresh db.user_sessions row created for the real, pre-existing kijitechnology@gmail.com user (is_admin=True already set, user doc untouched). GET /api/auth/me -> HTTP 200, user.has_access=true, user.access_mode='admin' (no /admin-unlock call made). GET /api/topics with same cookie -> HTTP 200."
+    },
+    {
+      "criterion": "Any other (non-admin) email does NOT get auto-admin on login.",
+      "name": "test_tscheck_auto_admin_on_login.py::test_non_admin_email_does_not_get_auto_admin",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "kiji.fixture.unpaid@example.com session (via tests/access_fixtures.py) -> GET /api/auth/me HTTP 200, user.has_access=false, user.access_mode=null. GET /api/topics with same cookie -> HTTP 403."
+    },
+    {
+      "criterion": "POST /api/auth/admin-unlock still works as manual fallback for the admin email: correct password -> 200/admin, wrong password -> 403.",
+      "name": "test_tscheck_admin_unlock.py::test_admin_account_correct_password_grants_unlimited_access",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "Session attached to the real kijitechnology@gmail.com user; POST /api/auth/admin-unlock password='1356@Ram' -> HTTP 200, has_access=true, access_mode='admin'; follow-up GET /api/topics -> HTTP 200. (Existing test file's admin_cookie fixture was updated to reuse the real pre-existing admin user's user_id instead of creating a duplicate user doc with the same unique email -- see notes.)"
+    },
+    {
+      "criterion": "POST /api/auth/admin-unlock with wrong password for the admin email -> 403.",
+      "name": "test_tscheck_admin_unlock.py::test_admin_account_wrong_password_rejected",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with real admin session + password='not-the-real-password' -> HTTP 403, detail == 'गलत एडमिन पासवर्ड।'."
+    },
+    {
+      "criterion": "Non-admin email rejected by admin-unlock even with correct password (regression guard).",
+      "name": "test_tscheck_admin_unlock.py::test_non_admin_account_rejected_even_with_correct_password",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock for kiji.fixture.unpaid@example.com + correct password -> HTTP 403, detail mentions kijitechnology@gmail.com."
+    },
+    {
+      "criterion": "Old admin email (admin@kiji.com) no longer privileged (regression guard).",
+      "name": "test_tscheck_admin_unlock.py::test_old_admin_email_no_longer_treated_as_admin",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock for admin@kiji.com + correct password -> HTTP 403, detail mentions kijitechnology@gmail.com."
+    },
+    {
+      "criterion": "End-to-end UI: with the admin session, the paywall gate (RequirePaid) grants access to '/' instead of redirecting to /membership.",
+      "name": "admin-session-bypasses-paywall-home",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Navigated to https://grammar-master-82.preview.emergentagent.com/ (APP_URL ingress) with a session cookie attached to the real, pre-existing kijitechnology@gmail.com user (temporary session row only, cleaned up after). home-page testid rendered, URL stayed at '/' (no redirect to /membership). Screenshot: admin-session-bypasses-paywall-home-home-visible-admin.png."
+    },
+    {
+      "criterion": "End-to-end UI: a non-admin session is redirected to /membership by the paywall gate.",
+      "name": "non-admin-session-redirects-to-membership",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Navigated to https://grammar-master-82.preview.emergentagent.com/ with kiji.fixture.unpaid@example.com session cookie (via tests/access_fixtures.py, cleaned up after). URL redirected to /membership as expected. Screenshot: non-admin-session-redirects-to-membership-redirected-membership-non-admin.png."
+    }
+  ],
+  "bugs": [],
+  "action_items": [
+    {
+      "item": "pre_existing_backend_test_failures_unrelated_to_scope",
+      "severity": "info",
+      "detail": "Full suite (cd /app/backend && python -m pytest -q) has 18 pre-existing failures in tests/test_tscheck_paid_access_control.py and tests/test_tscheck_content_coverage.py -- same stale-fixture-cookie issue flagged in iteration_1/2/3, unrelated to this iteration's acceptance_matrix (auto-admin-on-login). Not touched, flagged for main agent awareness only."
+    },
+    {
+      "item": "fixed_pre_existing_fixture_conflict_in_test_tscheck_admin_unlock.py",
+      "severity": "info",
+      "detail": "The existing admin_cookie fixture in tests/test_tscheck_admin_unlock.py previously tried to upsert a NEW user document for kijitechnology@gmail.com (a new user_id with that email), which now fails with a MongoDB duplicate-key error on the unique email index because the real admin user already exists (per seed_facts backfill). Updated the fixture to attach a fresh session to the existing real user instead of creating a duplicate user doc, and to clean up only the session afterward. This is a testing-artifact fix (no application code touched) needed for the suite to keep passing after the backfill described in the briefing."
+    }
+  ],
+  "retest_needed": false,
+  "notes": "All 3 acceptance_matrix criteria covered (8 checks: 2 new backend tests for the auto-admin-on-login behavior + 2 UI-level browser checks proving the paywall gate respects it end-to-end, plus 3 existing admin-unlock regression tests re-verified and 1 existing test's fixture repaired for compatibility with the now-real admin user). Confirmed via direct code read of routers/auth.py exchange() that profile['is_admin']=True is set before the upsert whenever email==ADMIN_EMAIL, so future re-logins by this email will also auto-admin (per spec_deviations, real Google OAuth session_id cannot be obtained in this sandbox, so the exchange() endpoint itself was verified by code inspection + by exercising its downstream effect via a session pointed at the real already-migrated user). Real production user doc (kijitechnology@gmail.com) was never modified or deleted -- only temporary session docs were created and removed; verified with a final DB read after cleanup."
+}
