@@ -9,10 +9,6 @@ import pytest
 
 STUDY_PATHS = ["/topics", "/topics/grammar-master-82", "/questions", "/stats", "/syllabus"]
 
-PAID_COOKIE = "IQCyT9thKKknAASBnkI7zQQ9J4HzQOfm-GyNl-pnPzg"
-UNPAID_COOKIE = "a_UvJL_OZJM7pX9PHSbJ8p_dsaFPgKwIAuVa4d6DMmQ"
-EXPIRED_COOKIE = "b03wFhVNObEIHRRYElonIKykB2sJ9Cu6yDtPwoX7VRA"
-
 
 @pytest.mark.parametrize("path", STUDY_PATHS)
 def test_anonymous_rejected_401(client: httpx.Client, path):
@@ -21,14 +17,14 @@ def test_anonymous_rejected_401(client: httpx.Client, path):
 
 
 @pytest.mark.parametrize("path", STUDY_PATHS)
-def test_unpaid_fixture_rejected_403(client: httpx.Client, path):
-    r = client.get(path, cookies={"session_token": UNPAID_COOKIE})
+def test_unpaid_fixture_rejected_403(client: httpx.Client, unpaid_cookie, path):
+    r = client.get(path, cookies={"session_token": unpaid_cookie})
     assert r.status_code == 403, f"{path} -> {r.status_code}: {r.text[:200]}"
 
 
 @pytest.mark.parametrize("path", STUDY_PATHS)
-def test_expired_fixture_rejected_403(client: httpx.Client, path):
-    r = client.get(path, cookies={"session_token": EXPIRED_COOKIE})
+def test_expired_fixture_rejected_403(client: httpx.Client, expired_cookie, path):
+    r = client.get(path, cookies={"session_token": expired_cookie})
     assert r.status_code == 403, f"{path} -> {r.status_code}: {r.text[:200]}"
 
 
@@ -43,8 +39,8 @@ PAID_EXPECTED = {
 
 
 @pytest.mark.parametrize("path", STUDY_PATHS)
-def test_paid_fixture_allowed_200(client: httpx.Client, path):
-    r = client.get(path, cookies={"session_token": PAID_COOKIE})
+def test_paid_fixture_allowed_200(client: httpx.Client, paid_cookie, path):
+    r = client.get(path, cookies={"session_token": paid_cookie})
     expected = PAID_EXPECTED.get(path, 200)
     assert r.status_code == expected, f"{path} -> {r.status_code}: {r.text[:200]}"
 

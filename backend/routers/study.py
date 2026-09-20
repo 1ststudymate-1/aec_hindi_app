@@ -46,7 +46,7 @@ async def get_topic(slug: str):
 async def list_questions(
     qtype: str | None = None,
     topic_slug: str | None = None,
-    limit: int = Query(default=300, ge=1, le=300),
+    limit: int = Query(default=600, ge=1, le=600),
 ):
     query: dict = {}
     if qtype:

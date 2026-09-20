@@ -1,0 +1,54 @@
+{
+  "iteration": 5,
+  "mode": "generate",
+  "summary": "Verified the MCQ question bank expansion: db.stats/questions now report 457 MCQs (>=300 chapter-wise addition target), all 25 topic slugs have >=5 MCQs each (7-64 range), every sampled MCQ has exactly 4 options / valid 0-3 answer_index / non-empty explanation with zero duplicate ids across the full pool, and GET /questions?qtype=mcq&topic_slug=mixed returns the full 457 (not truncated by the old 300 cap). End-to-end on /abhyas: mixed mode shows 'प्रश्न 1 / 457', switching to संधि (sandhi) shows its own smaller count (48), and answering reveals the explanation with no console errors. Also repaired brittle pre-existing hardcoded-cookie backend tests (test_tscheck_content_coverage.py, test_tscheck_paid_access_control.py) by moving them onto new self-contained, uniquely-tagged conftest.py fixtures (paid_cookie/unpaid_cookie/expired_cookie) instead of literal session tokens that another test file's cleanup step was silently invalidating -- full suite now passes 63/63 on repeated reruns.",
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    {
+      "criterion": "GET /api/stats (paid session) returns mcqs >= 300 (actual 457); GET /api/questions?qtype=mcq&topic_slug=mixed returns the full pool up to the new 600 limit, not truncated to the old 300 cap.",
+      "name": "tests/test_tscheck_mcq_pool_expansion.py::test_stats_shows_expanded_mcq_pool, test_mixed_mcq_query_not_truncated_by_old_300_cap",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /stats (paid_cookie fixture) -> HTTP 200 {topics:25, mcqs:457, shorts:25, descriptives:25}. GET /questions?qtype=mcq&topic_slug=mixed -> HTTP 200, len(data)==457==stats['mcqs'], and 457>300 proving the raised limit is actually exercised."
+    },
+    {
+      "criterion": "Every one of the 25 topic slugs has more MCQs than before -- none thin/empty (>=5 each).",
+      "name": "tests/test_tscheck_mcq_pool_expansion.py::test_every_topic_has_at_least_five_mcqs[25 parametrized slugs]",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /questions?qtype=mcq&topic_slug=<slug> for all 25 syllabus slugs (patra-lekhan-parichay ... anek-shabdon-ke-liye-ek-shabd) -> HTTP 200 each, len(data)>=5 for every slug (e.g. sandhi=48). Also cross-checked via direct API script: 0 slugs under 5."
+    },
+    {
+      "criterion": "Each MCQ has exactly 4 options with valid answer_index (0-3) and non-empty explanation; no duplicate ids in the pool.",
+      "name": "tests/test_tscheck_mcq_pool_expansion.py::test_mcq_shape_and_no_duplicate_ids_across_full_pool",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /questions?qtype=mcq&topic_slug=mixed -> HTTP 200, iterated all 457 returned MCQs: options.length==4, 0<=answer_index<=3, explanation non-empty string for every one; len(ids)==len(set(ids))==457 (no duplicates)."
+    },
+    {
+      "criterion": "Anonymous requests to the expanded /questions endpoint are still correctly rejected (paywall behavior unaffected by the content expansion).",
+      "name": "tests/test_tscheck_mcq_pool_expansion.py::test_anonymous_still_rejected_401",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /questions?qtype=mcq&topic_slug=mixed with no cookie -> HTTP 401 {\"detail\":\"पहले Google से लॉगिन करें।\"}."
+    },
+    {
+      "criterion": "/abhyas quiz UI end-to-end: mixed mode shows the full new pool count, switching to a specific topic (sandhi) shows that topic's own smaller count and different questions, and answering reveals the explanation with no console errors.",
+      "name": "quiz-mixed-and-sandhi-topic-counts",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "On https://grammar-master-82.preview.emergentagent.com/abhyas (paid fixture cookie): quiz-progress-text == 'प्रश्न 1 / 457' in mixed mode; after selecting quiz-topic-option-sandhi via quiz-topic-trigger, quiz-progress-text == 'प्रश्न 1 / 48' (live API-fetched sandhi count); clicking quiz-option-0 revealed quiz-explanation. No console errors reported. Screenshots: quiz-mixed-and-sandhi-topic-counts-mixed-mode-progress.png, -sandhi-topic-progress.png, -sandhi-explanation-revealed.png."
+    }
+  ],
+  "bugs": [],
+  "action_items": [
+    {
+      "item": "fixed_brittle_hardcoded_session_cookies_in_existing_backend_tests",
+      "severity": "info",
+      "detail": "tests/test_tscheck_content_coverage.py and tests/test_tscheck_paid_access_control.py previously hardcoded literal session_token cookies from a one-off `python -m tests.access_fixtures` run. Those tokens shared the 'kiji-access' test_fixture tag with tests/access_fixtures.py, and test_tscheck_admin_unlock.py's non_admin_cookie module fixture calls `access_fixtures.py --cleanup` in its teardown, which does a broad delete_many({test_fixture:'kiji-access'}) that silently wiped ANY session with that tag -- including hardcoded ones baked into other test files -- causing them to 401 on the very next full-suite run. Fixed by adding self-contained paid_cookie/unpaid_cookie/expired_cookie fixtures to tests/conftest.py, each using its own uuid-suffixed tscheck-<uuid> tag (immune to any other file's cleanup) and creating/destroying its session via a subprocess with its own fresh event loop (same proven pattern as test_tscheck_admin_unlock.py, avoiding a motor/asyncio event-loop-closed conflict that direct in-process async fixtures hit). Verified rerun-safe: full suite (`cd /app/backend && python -m pytest -q`) passes 63/63 on two consecutive runs. This is a testing-artifact repair only; no application code touched."
+    }
+  ],
+  "retest_needed": false,
+  "notes": "Also updated test_tscheck_content_coverage.py's stale expected counts (118 mcq / <3-per-topic minimum from an earlier, smaller seed) to the current 457 mcq / >=5-per-topic reality, since that pre-existing file directly overlapped this iteration's expanded criteria and would otherwise fail on the new content. Content is access-gated (require_paid), confirmed anonymous still gets 401 (expected paywall behavior, not a bug, per briefing seed_facts). Only 4 acceptance_matrix criteria were in scope for this iteration; covered with 5 artifacts (one criterion split into two focused backend tests: stats/mixed-limit)."
+}

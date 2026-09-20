@@ -7,15 +7,13 @@ Uses the paid fixture (content is access-gated).
 """
 import httpx
 
-PAID_COOKIE = "IQCyT9thKKknAASBnkI7zQQ9J4HzQOfm-GyNl-pnPzg"
+
+def _paid_get(client: httpx.Client, path: str, paid_cookie: str):
+    return client.get(path, cookies={"session_token": paid_cookie})
 
 
-def _paid_get(client: httpx.Client, path: str):
-    return client.get(path, cookies={"session_token": PAID_COOKIE})
-
-
-def test_topic_count_and_required_slugs(client: httpx.Client):
-    r = _paid_get(client, "/topics")
+def test_topic_count_and_required_slugs(client: httpx.Client, paid_cookie):
+    r = _paid_get(client, "/topics", paid_cookie)
     assert r.status_code == 200
     topics = r.json()
     assert len(topics) == 25, f"expected 25 topics, got {len(topics)}"
@@ -24,8 +22,8 @@ def test_topic_count_and_required_slugs(client: httpx.Client):
         assert required in slugs, f"missing required topic slug {required}: {sorted(slugs)}"
 
 
-def test_questions_bank_composition(client: httpx.Client):
-    r = _paid_get(client, "/questions")
+def test_questions_bank_composition(client: httpx.Client, paid_cookie):
+    r = _paid_get(client, "/questions", paid_cookie)
     assert r.status_code == 200
     data = r.json()
     # response may be a dict of buckets or list; normalize
@@ -33,18 +31,18 @@ def test_questions_bank_composition(client: httpx.Client):
     mcq = [q for q in data if q.get("qtype") == "mcq"]
     short = [q for q in data if q.get("qtype") == "short"]
     descriptive = [q for q in data if q.get("qtype") == "descriptive"]
-    assert len(mcq) == 118, f"expected 118 mcqs, got {len(mcq)}"
+    assert len(mcq) == 457, f"expected 457 mcqs, got {len(mcq)}"
     assert len(short) == 25, f"expected 25 short, got {len(short)}"
     assert len(descriptive) == 25, f"expected 25 descriptive, got {len(descriptive)}"
 
     from collections import Counter
     per_topic = Counter(q.get("topic_slug") for q in mcq)
-    under = {k: v for k, v in per_topic.items() if v < 3}
-    assert not under, f"topics with <3 mcqs: {under}"
+    under = {k: v for k, v in per_topic.items() if v < 5}
+    assert not under, f"topics with <5 mcqs: {under}"
 
 
-def test_syllabus_structure_complete(client: httpx.Client):
-    r = _paid_get(client, "/syllabus")
+def test_syllabus_structure_complete(client: httpx.Client, paid_cookie):
+    r = _paid_get(client, "/syllabus", paid_cookie)
     assert r.status_code == 200
     data = r.json()
     assert len(data.get("objectives", [])) == 4
