@@ -11,7 +11,7 @@ class UserView(BaseModel):
     picture: str = ""
     has_access: bool
     access_until: datetime | None = None
-    access_mode: Literal["live", "test"] | None = None
+    access_mode: Literal["live", "test", "admin"] | None = None
 
 
 class AuthState(BaseModel):
@@ -24,6 +24,10 @@ class SessionExchange(BaseModel):
 
 class Message(BaseModel):
     message: str
+
+
+class AdminUnlock(BaseModel):
+    password: str = Field(min_length=1, max_length=200)
 
 
 class Plan(BaseModel):

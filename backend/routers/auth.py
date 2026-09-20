@@ -1,11 +1,12 @@
+import os
 import secrets
 import uuid
 from datetime import timedelta
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from lib.db import db
-from lib.access import optional_user, same_origin_write, token_hash, user_view, utcnow
-from models.access import AuthState, Message, SessionExchange
+from lib.access import optional_user, require_user, same_origin_write, token_hash, user_view, utcnow
+from models.access import AdminUnlock, AuthState, Message, SessionExchange
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -61,6 +62,19 @@ async def exchange(body: SessionExchange, request: Request, response: Response):
                         samesite="none", max_age=7 * 86400, path="/")
     response.headers["Cache-Control"] = "no-store"
     return AuthState(user=user_view(user))
+
+
+@router.post("/admin-unlock", response_model=AuthState, dependencies=[Depends(same_origin_write)])
+async def admin_unlock(body: AdminUnlock, user=Depends(require_user)):
+    from pymongo import ReturnDocument
+    expected = os.environ.get("ADMIN_UNLOCK_PASSWORD", "")
+    if not expected or not secrets.compare_digest(body.password, expected):
+        raise HTTPException(403, "गलत एडमिन पासवर्ड।")
+    updated = await db.users.find_one_and_update(
+        {"user_id": user["user_id"]}, {"$set": {"is_admin": True}},
+        return_document=ReturnDocument.AFTER, projection={"_id": 0},
+    )
+    return AuthState(user=user_view(updated))
 
 
 @router.post("/logout", response_model=Message, dependencies=[Depends(same_origin_write)])

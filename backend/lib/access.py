@@ -36,6 +36,10 @@ def billing_mode():
 
 
 def user_view(user: dict) -> UserView:
+    if user.get("is_admin"):
+        return UserView(user_id=user["user_id"], name=user["name"], email=user["email"],
+                        picture=user.get("picture", ""), access_until=None,
+                        has_access=True, access_mode="admin")
     expiry = user.get("live_access_until")
     mode = "live" if expiry else None
     if (not expiry or aware(expiry) <= utcnow()) and billing_mode() == "test":

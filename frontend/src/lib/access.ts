@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "./api";
 export interface UserView {
   user_id: string; name: string; email: string; picture: string;
-  has_access: boolean; access_until: string | null; access_mode: "live" | "test" | null;
+  has_access: boolean; access_until: string | null; access_mode: "live" | "test" | "admin" | null;
 }
 export interface AuthState { user: UserView | null }
 export interface SessionExchange { session_id: string }
 export interface Message { message: string }
+export interface AdminUnlock { password: string }
 export interface Plan { amount: number; currency: string; months: number; enabled: boolean; mode: "disabled" | "test" | "live" }
 export interface OrderView { order_id: string; key_id: string; amount: number; currency: string; mode: "test" | "live" }
 export interface PaymentVerification { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }

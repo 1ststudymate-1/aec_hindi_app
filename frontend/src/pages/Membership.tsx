@@ -6,11 +6,12 @@ import { SiGoogle } from "@icons-pack/react-simple-icons";
 import { toast } from "sonner";
 import { apiGet, apiPost, ApiError } from "@/lib/api";
 import { accessDate, googleLoginUrl, useAuth } from "@/lib/access";
-import type { AuthState, OrderView, PaymentVerification, Plan } from "@/lib/access";
+import type { AdminUnlock, AuthState, OrderView, PaymentVerification, Plan } from "@/lib/access";
 import { loadCheckout } from "@/lib/razorpay";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 
 function errorMessage(error: unknown) {
   if (error instanceof ApiError && error.body && typeof error.body === "object" && "detail" in error.body && typeof error.body.detail === "string") return error.body.detail;
@@ -23,6 +24,7 @@ export default function Membership() {
   const client = useQueryClient();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const plan = useQuery({ queryKey: ["billing-plan"], queryFn: () => apiGet<Plan>("/billing/plan"), retry: false });
   const enabled = !plan.isError && plan.data?.enabled === true;
   const active = Boolean(user?.has_access);
@@ -43,6 +45,15 @@ export default function Membership() {
   });
   const reconcile = useMutation({ mutationFn: () => apiPost<AuthState>("/billing/reconcile"), onSuccess: confirmed,
     onError: (error) => { setNotice(errorMessage(error)); toast.error(errorMessage(error)); } });
+  const adminUnlock = useMutation({
+    mutationFn: (payload: AdminUnlock) => apiPost<AuthState>("/auth/admin-unlock", payload),
+    onSuccess: async (result) => {
+      await client.invalidateQueries({ queryKey: ["auth"] });
+      setAdminPassword("");
+      if (result.user?.has_access) toast.success("एडमिन पहुँच सक्रिय हो गई।");
+    },
+    onError: (error) => { toast.error(errorMessage(error)); },
+  });
   const create = useMutation({
     mutationFn: async () => { await loadCheckout(); return apiPost<OrderView>("/billing/orders"); },
     onSuccess: (order) => {
@@ -105,7 +116,7 @@ export default function Membership() {
               {user && <div className="mb-5 rounded-xl bg-secondary/60 p-4" data-testid="account-profile">
                 <p className="font-medium" data-testid="account-name">नमस्ते, {user.name}</p>
                 <p className="mt-1 break-all text-xs text-muted-foreground" data-testid="account-email">{user.email}</p>
-                <p className="mt-3 text-sm leading-7" data-testid="account-access-status">{active ? `पैक सक्रिय · ${accessDate(user.access_until)} तक (भारतीय समय)` : user.access_until ? `पैक समाप्त · ${accessDate(user.access_until)} (भारतीय समय)` : "पैक अभी सक्रिय नहीं है।"}</p>
+                <p className="mt-3 text-sm leading-7" data-testid="account-access-status">{user.access_mode === "admin" ? "एडमिन पहुँच सक्रिय · असीमित" : active ? `पैक सक्रिय · ${accessDate(user.access_until)} तक (भारतीय समय)` : user.access_until ? `पैक समाप्त · ${accessDate(user.access_until)} (भारतीय समय)` : "पैक अभी सक्रिय नहीं है।"}</p>
               </div>}
               {plan.data?.mode === "test" && <p className="mb-4 rounded-lg bg-amber-50 p-3 text-sm leading-7 text-amber-900" data-testid="payment-test-mode">TEST MODE — केवल परीक्षण भुगतान; वास्तविक पैसे नहीं कटेंगे। यह पहुँच Live Mode में मान्य नहीं होगी।</p>}
               {!enabled && !active && <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-950" role="status" data-testid="payment-disabled-notice">
@@ -119,6 +130,17 @@ export default function Membership() {
                   </Button>
                 </>}
               {user && enabled && !active && <Button variant="ghost" className="mt-3 w-full" disabled={busy} onClick={() => reconcile.mutate()} data-testid="check-payment-button">पैसे कट गए? भुगतान स्थिति जाँचें</Button>}
+              {user && !active && <div className="mt-5 rounded-xl border border-border bg-secondary/40 p-4" data-testid="admin-unlock-section">
+                <p className="text-xs font-medium text-muted-foreground" data-testid="admin-unlock-label">एडमिन पासवर्ड (यदि आपके पास है)</p>
+                <div className="mt-2 flex gap-2">
+                  <Input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="पासवर्ड डालें" data-testid="admin-unlock-input" />
+                  <Button variant="outline" disabled={!adminPassword || adminUnlock.isPending}
+                    onClick={() => adminUnlock.mutate({ password: adminPassword })} data-testid="admin-unlock-button">
+                    {adminUnlock.isPending ? "जाँच रहे हैं…" : "अनलॉक करें"}
+                  </Button>
+                </div>
+              </div>}
               {notice && <p className="mt-4 text-sm leading-7" role="status" data-testid="payment-status-message">{notice}</p>}
               {plan.isError && <Button variant="ghost" className="mt-3 w-full" onClick={() => void plan.refetch()} data-testid="plan-retry-button">भुगतान उपलब्धता फिर जाँचें</Button>}
               <p className="mt-5 flex gap-2 text-xs leading-6 text-muted-foreground" data-testid="secure-access-note"><ShieldCheck className="mt-1 size-4 shrink-0" />भुगतान की पुष्टि के बाद 6 कैलेंडर महीने की पहुँच मिलेगी। समाप्ति तिथि आपके खाते में दिखाई जाएगी।</p>
