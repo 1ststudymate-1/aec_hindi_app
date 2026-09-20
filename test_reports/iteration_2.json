@@ -1,0 +1,47 @@
+{
+  "iteration": 2,
+  "mode": "generate",
+  "summary": "Verified admin-unlock feature: non-admin accounts rejected even with correct password, admin@kiji.com rejected on wrong password, admin@kiji.com with correct password gets unlimited access and bypasses paywall, and the admin-unlock UI section is absent for logged-out visitors on /membership.",
+  "passed": 4,
+  "failed": 0,
+  "checks": [
+    {
+      "criterion": "Admin unlock must be restricted to admin@kiji.com; any other logged-in account with the correct password is rejected.",
+      "name": "test_tscheck_admin_unlock.py::test_non_admin_account_rejected_even_with_correct_password",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with session cookie for kiji.fixture.unpaid@example.com (non-admin) + password '1356@Ram' -> HTTP 403, detail contains 'admin@kiji.com' ('यह सुविधा केवल एडमिन खाते (admin@kiji.com) के लिए है...')."
+    },
+    {
+      "criterion": "Logged-in as admin@kiji.com with wrong password is rejected.",
+      "name": "test_tscheck_admin_unlock.py::test_admin_account_wrong_password_rejected",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with temporary admin@kiji.com session (tscheck-admin-unlock-user) + password 'not-the-real-password' -> HTTP 403, detail == 'गलत एडमिन पासवर्ड।'."
+    },
+    {
+      "criterion": "Logged-in as admin@kiji.com with correct password '1356@Ram' grants unlimited free access.",
+      "name": "test_tscheck_admin_unlock.py::test_admin_account_correct_password_grants_unlimited_access",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with admin@kiji.com session + correct password -> HTTP 200, user.has_access=true, user.access_mode='admin'. Follow-up GET /api/topics with same cookie -> HTTP 200 (paywall bypassed, previously 401/403 for require_paid-gated routes)."
+    },
+    {
+      "criterion": "Membership page shows admin-unlock section (mentioning admin@kiji.com) only for logged-in users without access; absent for logged-out visitors.",
+      "name": "membership-admin-unlock-hidden-when-logged-out",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Navigated to /membership logged out; waited for auth resolution (google-login-link visible, confirming logged-out branch); data-testid=admin-unlock-section count() == 0. Screenshot captured at membership-admin-unlock-hidden-when-logged-out-membership-logged-out.png."
+    }
+  ],
+  "bugs": [],
+  "action_items": [
+    {
+      "item": "pre_existing_backend_test_failures",
+      "severity": "info",
+      "detail": "Full backend suite (cd /app/backend && python -m pytest -q) shows 18 pre-existing failures in tests/test_tscheck_content_coverage.py and tests/test_tscheck_paid_access_control.py, all unrelated to the admin-unlock feature under test in this iteration (same failures were already flagged in iteration_1.json). Likely due to hardcoded fixture cookies in those files going stale after prior fixture cleanup/DB resets. Not part of this iteration's acceptance_matrix; flagged for main agent awareness only."
+    }
+  ],
+  "retest_needed": false,
+  "notes": "All 4 acceptance_matrix criteria covered: 3 via a new backend pytest file (tests/test_tscheck_admin_unlock.py, self-contained fixtures created/cleaned per-run, no seeded rows touched), 1 via a browser check for the logged-out UI-absence case (the logged-in non-paid UI-presence branch is implied by source review of Membership.tsx line 133: `{user && !active && <div data-testid=\"admin-unlock-section\">...}`, matching spec; full E2E of that branch would need a real non-admin logged-in browser session which is out of scope per briefing)."
+}
