@@ -1,0 +1,52 @@
+{
+  "iteration": 1,
+  "mode": "generate",
+  "summary": "Verified fix for header login link: clicking data-testid=header-account-link when logged out now navigates away to Google/auth.emergentagent.com sign-in flow instead of silently staying on the same page. Link is visible and unobstructed on both desktop (1440px) and mobile (390px) viewports. No app-origin console errors on home page load.",
+  "passed": 3,
+  "failed": 0,
+  "checks": [
+    {
+      "criterion": "Clicking header login link must navigate away to Google's OAuth sign-in (not stay on same page)",
+      "name": "header-login-navigates-to-google",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Clicked data-testid=header-account-link on desktop (1440x900); page.waitForURL matched /accounts.google.com|auth.emergentagent.com/ within 15s. Final page.url() was on the auth/google domain, confirming real navigation away from the app (not a same-page no-op)."
+    },
+    {
+      "criterion": "Header login link visible and clickable on both desktop and mobile viewports",
+      "name": "header-login-visible-both-viewports",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "data-testid=header-account-link visible with valid boundingBox() at 1440x900 and 390x844. document.elementFromPoint() at the mobile link's center resolved to the link itself (or a descendant), confirming no overlay obscures it."
+    },
+    {
+      "criterion": "No console errors or failed same-origin API requests on home page load",
+      "name": "home-page-no-app-console-errors",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Collected all console 'error' and pageerror events on '/' load; filtered out third-party auth.emergentagent.com/accounts.google.com/ERR_NAME_NOT_RESOLVED noise. Zero app-origin errors remained."
+    },
+    {
+      "criterion": "Logged-in user sees 'मेरा खाता' and clicking navigates to /account, not Google",
+      "name": null,
+      "lane": "browser",
+      "status": "blocked",
+      "evidence": "Briefing explicitly states this requires a real Google OAuth session/cookie fixture which is not available; no test_credentials.md or session fixture was provided for a logged-in state. Marked unverifiable in this run per briefing's own guidance (spec_deviations)."
+    }
+  ],
+  "bugs": [],
+  "action_items": [
+    {
+      "item": "test_credentials_missing",
+      "severity": "low",
+      "detail": "No logged-in session fixture/credentials available to verify the 'मेरा खाता' / /account navigation branch of the header link for authenticated users. Briefing pre-acknowledged this as unverifiable without real Google OAuth."
+    },
+    {
+      "item": "pre_existing_backend_test_failures",
+      "severity": "info",
+      "detail": "Ran full backend suite (cd /app/backend && python -m pytest -q): 18 failed, 10 passed in tests/test_tscheck_content_coverage.py and tests/test_tscheck_paid_access_control.py (all failing with 401 'पहले Google से लॉगिन करें' on paths expected to succeed with fixture cookies, and content-coverage assertions). These failures are UNRELATED to the header-login-link fix under test (no backend code was touched in this session; git log shows no backend/tests changes since MVP commit). Not part of this iteration's acceptance_matrix. Flagging for main agent awareness only, not blocking this iteration's retest_needed."
+    }
+  ],
+  "retest_needed": true,
+  "notes": "The 4th matrix criterion (logged-in state) is a code/DOM-logic-only inspection per the briefing since no real OAuth session is available; verified via source review of /app/frontend/src/components/Layout.tsx line 66: Link to={user ? \"/account\" : \"#\"} with onClick preventDefault + window.location.assign(googleLoginUrl()) only when logged out — matches expected spec description. All UI-facing, testable criteria (1, 2, 4-partial) passed via browser checks."
+}

@@ -4,7 +4,7 @@ import { BookOpenText, FileText, GraduationCap, LogOut, Menu, PenLine, ScrollTex
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/access";
+import { googleLoginUrl, useAuth } from "@/lib/access";
 import { endSession } from "@/lib/session";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -63,7 +63,7 @@ export default function Layout() {
             ))}
           </nav>
 
-          <Link to="/account" className="ml-auto flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-xs transition-colors duration-150 hover:bg-secondary xl:ml-2" aria-label="मेरा खाता" data-testid="header-account-link"><UserRound className="size-4" /><span className="hidden sm:inline">{user ? "मेरा खाता" : "लॉगिन"}</span></Link>
+          <Link to={user ? "/account" : "#"} onClick={user ? undefined : (e) => { e.preventDefault(); window.location.assign(googleLoginUrl()); }} className="ml-auto flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-xs transition-colors duration-150 hover:bg-secondary xl:ml-2" aria-label={user ? "मेरा खाता" : "Google से लॉगिन करें"} data-testid="header-account-link"><UserRound className="size-4" /><span className="hidden sm:inline">{user ? "मेरा खाता" : "लॉगिन"}</span></Link>
           {user && <Button variant="ghost" size="icon" aria-label="लॉगआउट करें" disabled={logout.isPending} onClick={() => logout.mutate()} data-testid="header-logout-button"><LogOut className="size-4" /></Button>}
           <div className="xl:hidden">
             <Sheet open={open} onOpenChange={setOpen}>
