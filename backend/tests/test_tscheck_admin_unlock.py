@@ -1,10 +1,11 @@
-"""Covers: admin-unlock restricted to ADMIN_EMAIL, wrong password rejected for admin,
-correct password grants admin access_mode and bypasses the paywall on /topics.
+"""Covers: admin-unlock restricted to ADMIN_EMAIL (kijitechnology@gmail.com), wrong
+password rejected for admin, correct password grants admin access_mode and bypasses
+the paywall on /topics. Also covers that the OLD admin email admin@kiji.com is no
+longer treated as admin.
 
 Uses synthetic fixtures only (no real Google OAuth) per briefing's spec_deviations.
-Creates its own temporary admin@kiji.com user+session (tscheck- prefixed ids) and
-cleans them up in a finally block; also uses access_fixtures' non-admin fixture emails
-for the negative-account test.
+Creates its own temporary kijitechnology@gmail.com and admin@kiji.com users+sessions
+(tscheck- prefixed ids) and cleans them up in a finally block.
 """
 import os
 import secrets
@@ -25,6 +26,8 @@ def api_url(path: str = "") -> str:
 
 HEADERS = {"X-Requested-With": "Kiji-App"}
 ADMIN_PASSWORD = "1356@Ram"
+NEW_ADMIN_EMAIL = "kijitechnology@gmail.com"
+OLD_ADMIN_EMAIL = "admin@kiji.com"
 
 
 def _run_fixture_script(args):
@@ -36,21 +39,8 @@ def _run_fixture_script(args):
     return result
 
 
-@pytest.fixture(scope="module")
-def non_admin_cookie():
-    """A logged-in session whose email is NOT admin@kiji.com (fixture kind=unpaid)."""
-    result = _run_fixture_script([])
-    assert result.returncode == 0, f"fixture script failed: {result.stderr}"
-    import json
-    data = json.loads(result.stdout.strip().splitlines()[-1])
-    yield data["unpaid"]["cookie"]
-    _run_fixture_script(["--cleanup"])
-
-
-@pytest.fixture(scope="module")
-def admin_cookie():
-    """Temporary admin@kiji.com user + session created directly via lib.db, mirroring
-    access_fixtures.py's pattern. Cleaned up after the module's tests finish."""
+def _make_session(email: str, fixture_tag: str):
+    """Create a temporary user+session for `email`, tagged with `fixture_tag` for cleanup."""
     script = f"""
 import asyncio, secrets, sys
 from datetime import timedelta
@@ -60,13 +50,13 @@ from lib.access import token_hash, utcnow
 
 async def main():
     await ensure_indexes()
-    user_id = "tscheck-admin-unlock-user"
-    user = {{"user_id": user_id, "email": "admin@kiji.com", "name": "TSCheck Admin",
-            "picture": "", "test_fixture": "tscheck-admin-unlock", "created_at": utcnow()}}
+    user_id = {fixture_tag!r} + "-user"
+    user = {{"user_id": user_id, "email": {email!r}, "name": "TSCheck Admin",
+            "picture": "", "test_fixture": {fixture_tag!r}, "created_at": utcnow()}}
     await db.users.replace_one({{"user_id": user_id}}, user, upsert=True)
     token = secrets.token_urlsafe(32)
     await db.user_sessions.insert_one({{"user_id": user_id, "token_hash": token_hash(token),
-        "expires_at": utcnow() + timedelta(days=1), "test_fixture": "tscheck-admin-unlock"}})
+        "expires_at": utcnow() + timedelta(days=1), "test_fixture": {fixture_tag!r}}})
     print(token)
 
 asyncio.run(main())
@@ -76,18 +66,19 @@ asyncio.run(main())
         cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         capture_output=True, text=True, timeout=60,
     )
-    assert result.returncode == 0, f"admin fixture setup failed: {result.stderr}"
-    token = result.stdout.strip().splitlines()[-1]
-    yield token
+    assert result.returncode == 0, f"fixture setup failed for {email}: {result.stderr}"
+    return result.stdout.strip().splitlines()[-1]
 
+
+def _cleanup_fixture(fixture_tag: str):
     cleanup_script = f"""
 import asyncio, sys
 sys.path.insert(0, {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))!r})
 from lib.db import db
 
 async def main():
-    await db.users.delete_many({{"test_fixture": "tscheck-admin-unlock"}})
-    await db.user_sessions.delete_many({{"test_fixture": "tscheck-admin-unlock"}})
+    await db.users.delete_many({{"test_fixture": {fixture_tag!r}}})
+    await db.user_sessions.delete_many({{"test_fixture": {fixture_tag!r}}})
 
 asyncio.run(main())
 """
@@ -96,8 +87,37 @@ asyncio.run(main())
                     capture_output=True, text=True, timeout=60)
 
 
+@pytest.fixture(scope="module")
+def non_admin_cookie():
+    """A logged-in session whose email is NOT the admin email (fixture kind=unpaid)."""
+    result = _run_fixture_script([])
+    assert result.returncode == 0, f"fixture script failed: {result.stderr}"
+    import json
+    data = json.loads(result.stdout.strip().splitlines()[-1])
+    yield data["unpaid"]["cookie"]
+    _run_fixture_script(["--cleanup"])
+
+
+@pytest.fixture(scope="module")
+def old_admin_email_cookie():
+    """Temporary admin@kiji.com (OLD admin email) session -- must no longer be admin."""
+    tag = "tscheck-admin-unlock-old"
+    token = _make_session(OLD_ADMIN_EMAIL, tag)
+    yield token
+    _cleanup_fixture(tag)
+
+
+@pytest.fixture(scope="module")
+def admin_cookie():
+    """Temporary kijitechnology@gmail.com (current ADMIN_EMAIL) user + session."""
+    tag = "tscheck-admin-unlock-new"
+    token = _make_session(NEW_ADMIN_EMAIL, tag)
+    yield token
+    _cleanup_fixture(tag)
+
+
 def test_non_admin_account_rejected_even_with_correct_password(non_admin_cookie):
-    """Criterion 1: logged-in non-admin email + correct password -> 403, admin-only message."""
+    """Criterion: logged-in non-admin email + correct password -> 403, admin-only message."""
     resp = httpx.post(
         api_url("/auth/admin-unlock"),
         json={"password": ADMIN_PASSWORD},
@@ -107,11 +127,25 @@ def test_non_admin_account_rejected_even_with_correct_password(non_admin_cookie)
     )
     assert resp.status_code == 403, f"expected 403, got {resp.status_code}: {resp.text}"
     detail = resp.json().get("detail", "")
-    assert "admin@kiji.com" in detail, f"error should mention admin@kiji.com, got: {detail}"
+    assert NEW_ADMIN_EMAIL in detail, f"error should mention {NEW_ADMIN_EMAIL}, got: {detail}"
+
+
+def test_old_admin_email_no_longer_treated_as_admin(old_admin_email_cookie):
+    """Criterion: the OLD admin email admin@kiji.com must no longer be admin -> 403, not 200."""
+    resp = httpx.post(
+        api_url("/auth/admin-unlock"),
+        json={"password": ADMIN_PASSWORD},
+        cookies={"session_token": old_admin_email_cookie},
+        headers=HEADERS,
+        timeout=30,
+    )
+    assert resp.status_code == 403, f"expected 403 for old admin email, got {resp.status_code}: {resp.text}"
+    detail = resp.json().get("detail", "")
+    assert NEW_ADMIN_EMAIL in detail, f"error should mention new admin email {NEW_ADMIN_EMAIL}, got: {detail}"
 
 
 def test_admin_account_wrong_password_rejected(admin_cookie):
-    """Criterion 2: admin@kiji.com session + wrong password -> 403 with specific Hindi message."""
+    """Criterion: kijitechnology@gmail.com session + wrong password -> 403 with specific Hindi message."""
     resp = httpx.post(
         api_url("/auth/admin-unlock"),
         json={"password": "not-the-real-password"},
@@ -124,7 +158,7 @@ def test_admin_account_wrong_password_rejected(admin_cookie):
 
 
 def test_admin_account_correct_password_grants_unlimited_access(admin_cookie):
-    """Criterion 3: admin@kiji.com session + correct password -> 200, has_access=True,
+    """Criterion: kijitechnology@gmail.com session + correct password -> 200, has_access=True,
     access_mode=admin, and the paywalled /topics endpoint becomes reachable."""
     resp = httpx.post(
         api_url("/auth/admin-unlock"),

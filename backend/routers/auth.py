@@ -70,7 +70,7 @@ async def admin_unlock(body: AdminUnlock, user=Depends(require_user)):
     admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
     expected = os.environ.get("ADMIN_UNLOCK_PASSWORD", "")
     if not admin_email or user["email"].strip().lower() != admin_email:
-        raise HTTPException(403, "यह सुविधा केवल एडमिन खाते (admin@kiji.com) के लिए है। उस Google खाते से लॉगिन करें।")
+        raise HTTPException(403, f"यह सुविधा केवल एडमिन खाते ({os.environ.get('ADMIN_EMAIL', '')}) के लिए है। उस Google खाते से लॉगिन करें।")
     if not expected or not secrets.compare_digest(body.password, expected):
         raise HTTPException(403, "गलत एडमिन पासवर्ड।")
     updated = await db.users.find_one_and_update(

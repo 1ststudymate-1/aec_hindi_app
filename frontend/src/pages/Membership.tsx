@@ -131,7 +131,7 @@ export default function Membership() {
                 </>}
               {user && enabled && !active && <Button variant="ghost" className="mt-3 w-full" disabled={busy} onClick={() => reconcile.mutate()} data-testid="check-payment-button">पैसे कट गए? भुगतान स्थिति जाँचें</Button>}
               {user && !active && <div className="mt-5 rounded-xl border border-border bg-secondary/40 p-4" data-testid="admin-unlock-section">
-                <p className="text-xs font-medium text-muted-foreground" data-testid="admin-unlock-label">एडमिन खाता (admin@kiji.com से Google लॉगिन करें, फिर पासवर्ड डालें)</p>
+                <p className="text-xs font-medium text-muted-foreground" data-testid="admin-unlock-label">एडमिन खाता (kijitechnology@gmail.com से Google लॉगिन करें, फिर पासवर्ड डालें)</p>
                 <div className="mt-2 flex gap-2">
                   <Input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)}
                     placeholder="पासवर्ड डालें" data-testid="admin-unlock-input" />

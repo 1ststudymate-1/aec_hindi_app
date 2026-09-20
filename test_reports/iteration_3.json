@@ -1,0 +1,54 @@
+{
+  "iteration": 3,
+  "mode": "generate",
+  "summary": "Verified admin identity change from admin@kiji.com to kijitechnology@gmail.com: correct admin email + correct password grants admin access and bypasses paywall, old admin email admin@kiji.com is now rejected (403), wrong password for the correct admin email is rejected (403 with Hindi message), and the /membership admin-unlock hint text now shows kijitechnology@gmail.com (and no longer shows admin@kiji.com) for a logged-in non-paid user.",
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    {
+      "criterion": "POST /api/auth/admin-unlock with session email kijitechnology@gmail.com and password '1356@Ram' returns 200 with has_access=true, access_mode='admin'; GET /api/topics with same session returns 200.",
+      "name": "test_tscheck_admin_unlock.py::test_admin_account_correct_password_grants_unlimited_access",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with temporary kijitechnology@gmail.com session (tscheck-admin-unlock-new-user) + password '1356@Ram' -> HTTP 200, user.has_access=true, user.access_mode='admin'. Follow-up GET /api/topics with same cookie -> HTTP 200 (paywall bypassed)."
+    },
+    {
+      "criterion": "The old admin email admin@kiji.com must no longer be treated as the admin account (403, not 200).",
+      "name": "test_tscheck_admin_unlock.py::test_old_admin_email_no_longer_treated_as_admin",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with temporary admin@kiji.com session (tscheck-admin-unlock-old-user) + password '1356@Ram' -> HTTP 403, detail mentions the new admin email kijitechnology@gmail.com, confirming admin@kiji.com is no longer privileged."
+    },
+    {
+      "criterion": "Any other non-admin email is rejected even with correct password (403).",
+      "name": "test_tscheck_admin_unlock.py::test_non_admin_account_rejected_even_with_correct_password",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with session cookie for kiji.fixture.unpaid@example.com (non-admin) + password '1356@Ram' -> HTTP 403, detail contains 'kijitechnology@gmail.com'."
+    },
+    {
+      "criterion": "Wrong password for the correct admin email (kijitechnology@gmail.com) is rejected with 403 'गलत एडमिन पासवर्ड।'.",
+      "name": "test_tscheck_admin_unlock.py::test_admin_account_wrong_password_rejected",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/auth/admin-unlock with temporary kijitechnology@gmail.com session + password 'not-the-real-password' -> HTTP 403, detail == 'गलत एडमिन पासवर्ड।'."
+    },
+    {
+      "criterion": "Membership page admin-unlock hint text (data-testid=admin-unlock-label) for a logged-in non-paid user contains 'kijitechnology@gmail.com' and not 'admin@kiji.com'.",
+      "name": "membership-admin-unlock-label-shows-new-email",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Navigated to https://grammar-master-82.preview.emergentagent.com/membership (APP_URL, the real ingress path) with a synthetic non-paid session cookie (kiji.fixture.unpaid@example.com, created via tests/access_fixtures.py and cleaned up after the run). admin-unlock-label text = 'एडमिन खाता (kijitechnology@gmail.com से Google लॉगिन करें, फिर पासवर्ड डालें)' -- contains new email, does not contain admin@kiji.com. Screenshot: membership-admin-unlock-label-shows-new-email-membership-admin-label.png."
+    }
+  ],
+  "bugs": [],
+  "action_items": [
+    {
+      "item": "pre_existing_backend_test_failures",
+      "severity": "info",
+      "detail": "Ran only tests/test_tscheck_admin_unlock.py for this iteration's scope (all 4 tests pass). The full suite (cd /app/backend && python -m pytest -q) still has the same pre-existing, unrelated failures in tests/test_tscheck_content_coverage.py and tests/test_tscheck_paid_access_control.py flagged in iteration_1/2 (stale hardcoded fixture cookies). Not in scope for this iteration's acceptance_matrix; flagged for main agent awareness only."
+    }
+  ],
+  "retest_needed": false,
+  "notes": "All 4 acceptance_matrix criteria covered (5 checks total: the two admin-identity criteria plus the wrong-password and old-email-rejected criteria are each their own passing pytest function in the same updated test file, plus one browser check for the UI hint text). Backend already read ADMIN_EMAIL/ADMIN_UNLOCK_PASSWORD dynamically from env (routers/auth.py), so no app code changes were needed beyond confirming backend/.env values (kijitechnology@gmail.com / 1356@Ram) match the briefing. Updated pre-existing tests/test_tscheck_admin_unlock.py (previously hardcoded to the old admin@kiji.com identity) and updated/created the membership browser check accordingly, per spec_deviations using synthetic session fixtures since real Google OAuth cannot be exercised in this sandbox."
+}
