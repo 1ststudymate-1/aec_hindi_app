@@ -2,9 +2,11 @@
 // duty is wiping the react-query cache so one account's data never renders for the next.
 import { queryClient } from "./queryClient";
 import { apiPost } from "./api";
+import { setProgressAccount } from "./progress";
 
 // Call after every successful login/signup.
 export function beginSession(): void {
+  setProgressAccount(null);
   queryClient.clear();
 }
 
@@ -13,6 +15,7 @@ export async function endSession(redirectTo: string = "/login"): Promise<void> {
   try {
     await apiPost("/auth/logout");
   } finally {
+    setProgressAccount(null);
     queryClient.clear();
     window.location.assign(redirectTo);
   }

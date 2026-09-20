@@ -64,3 +64,31 @@ class Stats(BaseModel):
     mcqs: int
     shorts: int
     descriptives: int
+
+
+class SyllabusItem(BaseModel):
+    title: str
+    slug: str
+    available: bool
+
+
+class SyllabusUnit(BaseModel):
+    unit: int
+    title: str
+    items: list[SyllabusItem]
+
+
+class Syllabus(BaseModel):
+    title: str
+    source: str
+    credits: int
+    teaching_hours: int
+    full_marks: int
+    pass_marks: int
+    duration_minutes: int
+    evaluation: str
+    objectives: list[str]
+    outcomes: list[str]
+    units: list[SyllabusUnit]
+    references: list[str]
+    notes: list[str]

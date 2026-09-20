@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, CheckCircle2, Circle, Clock, ListTree } from "lucide-react";
@@ -12,6 +12,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 
 export default function TopicPage() {
   const { slug = "" } = useParams();
+  const { hash } = useLocation();
   const [done, setDone] = useState(false);
 
   const { data: topic, isError, isLoading } = useQuery({
@@ -31,6 +32,10 @@ export default function TopicPage() {
     setDone(isCompleted(slug));
     window.scrollTo({ top: 0 });
   }, [slug]);
+
+  useEffect(() => {
+    if (topic && hash.startsWith("#section-")) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, [hash, topic]);
 
   const list = siblings ?? [];
   const index = list.findIndex((t) => t.slug === slug);
@@ -88,7 +93,7 @@ export default function TopicPage() {
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-8 px-4 py-10 sm:px-6 lg:grid-cols-12 lg:px-8">
         {/* outline */}
-        <aside className="lg:sticky lg:top-24 lg:col-span-3">
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:col-span-3">
           <div className="rounded-2xl border border-border bg-card p-5">
             <h2 className="flex items-center gap-2 font-heading text-sm font-semibold">
               <ListTree className="size-4 text-primary" /> इस विषय में
@@ -107,6 +112,7 @@ export default function TopicPage() {
             </nav>
             <Button
               onClick={onToggle}
+              disabled={!topic || isError}
               variant={done ? "secondary" : "default"}
               className="mt-4 w-full"
               data-testid="mark-read-button"
@@ -125,7 +131,7 @@ export default function TopicPage() {
         </aside>
 
         {/* content */}
-        <article className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-10 lg:col-span-9">
+        <article className="min-w-0 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-10 lg:col-span-9">
           {isError ? (
             <p className="text-sm text-muted-foreground" data-testid="topic-error-state">
               यह विषय-सामग्री अभी लोड नहीं हो सकी। कृपया पृष्ठ पुनः लोड करें या इकाई-सूची से दूसरा विषय चुनें।
@@ -141,7 +147,7 @@ export default function TopicPage() {
             {prev ? (
               <Link
                 to={`/vishay/${prev.slug}`}
-                className={buttonVariants({ variant: "outline" })}
+                className={buttonVariants({ variant: "outline" }) + " h-auto min-h-11 max-w-full py-3 text-center whitespace-normal"}
                 data-testid="prev-topic-link"
               >
                 <ArrowLeft className="mr-1 size-4" /> {prev.title}
@@ -152,7 +158,7 @@ export default function TopicPage() {
             {next ? (
               <Link
                 to={`/vishay/${next.slug}`}
-                className={buttonVariants()}
+                className={buttonVariants() + " h-auto min-h-11 max-w-full py-3 text-center whitespace-normal"}
                 data-testid="next-topic-link"
               >
                 {next.title} <ArrowRight className="ml-1 size-4" />

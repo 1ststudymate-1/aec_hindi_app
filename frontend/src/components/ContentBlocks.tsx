@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function BlockView({ block, idx }: { block: Block; idx: number }) {
+function BlockView({ block, idx }: { block: Block; idx: string }) {
   const testid = `content-block-${idx}`;
 
   switch (block.kind) {
@@ -50,7 +50,7 @@ function BlockView({ block, idx }: { block: Block; idx: number }) {
 
     case "table":
       return (
-        <div className="overflow-hidden rounded-xl border border-border" data-testid={testid}>
+        <div className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border" data-testid={testid}>
           {block.heading ? (
             <div className="border-b border-border bg-secondary/60 px-4 py-2 font-heading text-sm font-semibold">
               {block.heading}
@@ -60,7 +60,7 @@ function BlockView({ block, idx }: { block: Block; idx: number }) {
             <TableHeader>
               <TableRow className="bg-secondary/40">
                 {(block.headers ?? []).map((h, i) => (
-                  <TableHead key={i} className="font-heading text-[13px] font-semibold text-foreground">
+                  <TableHead key={i} className="min-w-24 font-heading text-[13px] leading-6 font-semibold whitespace-normal text-foreground" data-testid={`${testid}-header-${i}`}>
                     {h}
                   </TableHead>
                 ))}
@@ -72,10 +72,11 @@ function BlockView({ block, idx }: { block: Block; idx: number }) {
                   {row.map((cell, j) => (
                     <TableCell
                       key={j}
+                      data-testid={`${testid}-cell-${i}-${j}`}
                       className={
                         j === 0
-                          ? "align-top text-[14px] leading-7 font-medium text-foreground"
-                          : "align-top text-[14px] leading-7 text-foreground/80"
+                          ? "min-w-24 align-top text-[14px] leading-7 whitespace-normal font-medium text-foreground"
+                          : "min-w-32 align-top text-[14px] leading-7 whitespace-normal text-foreground/80"
                       }
                     >
                       {cell}
@@ -163,7 +164,7 @@ export default function ContentSections({ sections }: { sections: Section[] }) {
           </h3>
           <div className="space-y-5">
             {section.blocks.map((block, bi) => (
-              <BlockView key={bi} block={block} idx={bi} />
+              <BlockView key={bi} block={block} idx={`${si}-${bi}`} />
             ))}
           </div>
         </section>

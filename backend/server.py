@@ -18,6 +18,8 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 from lib.db import client, db, ensure_indexes
 from routers.study import router as study_router
+from routers.auth import router as auth_router
+from routers.billing import router as billing_router
 
 
 # Startup runs before the yield, shutdown after it. Add your own setup/teardown here.
@@ -63,9 +65,8 @@ async def get_status_checks():
 
 # Include the resource routers, then the main app router — this stays the last include
 api_router.include_router(study_router)
-
-# Include the router in the main app
-app.include_router(api_router)
+api_router.include_router(auth_router)
+api_router.include_router(billing_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,3 +82,14 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+@app.middleware("http")
+async def private_api_cache(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+app.include_router(api_router)

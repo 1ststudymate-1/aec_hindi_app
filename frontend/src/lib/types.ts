@@ -61,3 +61,11 @@ export interface Stats {
   shorts: number;
   descriptives: number;
 }
+
+export interface SyllabusItem { title: string; slug: string; available: boolean }
+export interface SyllabusUnit { unit: number; title: string; items: SyllabusItem[] }
+export interface Syllabus {
+  title: string; source: string; credits: number; teaching_hours: number;
+  full_marks: number; pass_marks: number; duration_minutes: number; evaluation: string;
+  objectives: string[]; outcomes: string[]; units: SyllabusUnit[]; references: string[]; notes: string[];
+}

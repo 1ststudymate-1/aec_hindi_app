@@ -174,7 +174,7 @@ export default function Exam() {
 
         {/* question banks */}
         <Tabs defaultValue="group-a" className="mt-12">
-          <TabsList variant="line" data-testid="exam-tabs">
+          <TabsList variant="line" className="flex h-auto w-full flex-wrap justify-start gap-2" data-testid="exam-tabs">
             <TabsTrigger value="group-a" data-testid="tab-group-a">
               समूह क — मॉडल प्रश्न
             </TabsTrigger>
@@ -202,7 +202,7 @@ export default function Exam() {
 
           <TabsContent value="group-b" className="mt-6">
             <p className="mb-5 text-[14.5px] leading-7 text-muted-foreground">
-              वर्णनात्मक प्रश्न (15 अंक) — प्रत्येक के साथ अंक पाने योग्य उत्तर-रूपरेखा दी गई है।
+              वर्णनात्मक प्रश्न (15 अंक) — प्रत्येक के साथ विस्तृत मॉडल उत्तर दिया गया है। ये अभ्यास प्रश्न हैं, वास्तविक विश्वविद्यालय प्रश्नपत्र नहीं। प्रश्नानुसार शब्द-सीमा रखें।
             </p>
             <div className="grid gap-4" data-testid="group-b-questions">
               {(descriptives ?? []).map((q, i) => (

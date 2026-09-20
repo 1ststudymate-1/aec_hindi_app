@@ -137,10 +137,10 @@ export default function Home() {
       <section className="border-b border-border bg-secondary/40">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 py-6 sm:px-6 lg:grid-cols-4 lg:px-8">
           {[
-            { icon: BookOpenText, label: "कुल विषय", value: stats ? String(stats.topics) : "24", testid: "stat-topics" },
-            { icon: GraduationCap, label: "अभ्यास प्रश्न (MCQ)", value: stats ? String(stats.mcqs) : "78", testid: "stat-mcqs" },
-            { icon: FileCheck2, label: "समूह क प्रश्न", value: stats ? String(stats.shorts) : "12", testid: "stat-shorts" },
-            { icon: Target, label: "समूह ख प्रश्न", value: stats ? String(stats.descriptives) : "9", testid: "stat-descriptives" },
+            { icon: BookOpenText, label: "कुल विषय", value: stats ? String(stats.topics) : "—", testid: "stat-topics" },
+            { icon: GraduationCap, label: "अभ्यास प्रश्न (MCQ)", value: stats ? String(stats.mcqs) : "—", testid: "stat-mcqs" },
+            { icon: FileCheck2, label: "समूह क प्रश्न", value: stats ? String(stats.shorts) : "—", testid: "stat-shorts" },
+            { icon: Target, label: "समूह ख प्रश्न", value: stats ? String(stats.descriptives) : "—", testid: "stat-descriptives" },
           ].map((s) => (
             <div key={s.testid} className="flex items-center gap-3" data-testid={s.testid}>
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-background text-primary shadow-sm">
@@ -195,7 +195,7 @@ export default function Home() {
               <h3 className="mt-5 font-heading text-xl font-semibold">इकाई 1 — पत्र लेखन एवं निबंध</h3>
               <p className="mt-2 text-[14.5px] leading-7 text-muted-foreground">
                 अनौपचारिक, औपचारिक, आवेदन-पत्र, व्यावसायिक पत्र, संपादक को पत्र और पाँच पूर्ण निबंध —
-                पर्यावरण, नैतिकता, विज्ञान, स्वास्थ्य, राष्ट्रीयता।
+                पर्यावरण, नैतिकता, विज्ञान, साहित्य, राष्ट्रीयता। स्वास्थ्य का निबंध अतिरिक्त अभ्यास है।
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {unit1.slice(0, 5).map((t) => (

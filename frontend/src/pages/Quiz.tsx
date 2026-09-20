@@ -32,7 +32,7 @@ export default function Quiz() {
     retry: false,
   });
 
-  const { data: questions, isError } = useQuery({
+  const { data: questions, isError, isPending } = useQuery({
     queryKey: ["questions", "mcq", topicSlug],
     queryFn: () => apiGet<Question[]>(`/questions?qtype=mcq&topic_slug=${topicSlug}`),
     retry: false,
@@ -98,13 +98,13 @@ export default function Quiz() {
               onValueChange={(value: string) => reset(value)}
               data-testid="quiz-topic-select"
             >
-              <SelectTrigger className="w-full max-w-sm" data-testid="quiz-topic-trigger">
+              <SelectTrigger className="h-auto min-h-11 w-full max-w-sm whitespace-normal" aria-label="अभ्यास का विषय चुनें" data-testid="quiz-topic-trigger">
                 <SelectValue>{(v) => labels[v as string] ?? "विषय चुनें"}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={MIXED}>सभी विषय (मिश्रित)</SelectItem>
+                <SelectItem value={MIXED} data-testid="quiz-topic-option-mixed">सभी विषय (मिश्रित)</SelectItem>
                 {(topics ?? []).map((t) => (
-                  <SelectItem key={t.slug} value={t.slug}>
+                  <SelectItem key={t.slug} value={t.slug} data-testid={`quiz-topic-option-${t.slug}`}>
                     {t.title}
                   </SelectItem>
                 ))}
@@ -122,7 +122,7 @@ export default function Quiz() {
           <p className="text-center text-sm text-muted-foreground" data-testid="quiz-error-state">
             प्रश्न अभी लोड नहीं हो सके। कृपया पृष्ठ पुनः लोड करें।
           </p>
-        ) : list.length === 0 ? (
+        ) : isPending ? <p role="status" data-testid="quiz-loading-state">प्रश्न लोड हो रहे हैं…</p> : list.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground" data-testid="quiz-empty-state">
             इस विषय के लिए अभी बहुविकल्पीय प्रश्न उपलब्ध नहीं हैं — कृपया दूसरा विषय चुनें या मिश्रित
             अभ्यास करें।
