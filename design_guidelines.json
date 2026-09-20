@@ -1,0 +1,189 @@
+{
+  "theme_strategy": {
+    "default_mode": "light",
+    "rationale": "Indian University Study Portal (SKMU Dumka - AEC Hindi). Academic reading and deep study requires warm parchment light mode with an optional crisp reading night-mode toggle. Emulates rich editorial textbook printing with warm terracotta, deep indigo/saffron accents, and crisp Devanagari typography.",
+    "support_dark_mode_toggle": true
+  },
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#FBF9F5",
+        "on_bg": "#1C1917",
+        "on_bg_muted": "#57534E",
+        "roles": {
+          "link": "#9A3412",
+          "error": "#B91C1C",
+          "success": "#15803D",
+          "warning": "#B45309",
+          "badge_bg": "#F5EBE1",
+          "border": "#E7DFD5"
+        }
+      },
+      {
+        "name": "panel",
+        "kind": "solid",
+        "bg": "#FFFFFF",
+        "on_bg": "#1C1917",
+        "on_bg_muted": "#57534E",
+        "roles": {
+          "link": "#9A3412",
+          "error": "#B91C1C",
+          "success": "#15803D",
+          "warning": "#B45309",
+          "border": "#E7DFD5"
+        }
+      },
+      {
+        "name": "card_subtle",
+        "kind": "solid",
+        "bg": "#F5F0E6",
+        "on_bg": "#1C1917",
+        "on_bg_muted": "#57534E",
+        "roles": {
+          "link": "#9A3412",
+          "border": "#DDD4C5"
+        }
+      },
+      {
+        "name": "hero",
+        "kind": "gradient",
+        "contrast_against": "#1C1917",
+        "guarantee": "scrim: linear-gradient(135deg, #2A170A 0%, #1A1F2C 100%) with dark backdrop tint",
+        "on_bg": "#FFFDF9",
+        "on_bg_muted": "#D6CEBF",
+        "roles": {
+          "link": "#FED7AA",
+          "error": "#FCA5A5",
+          "success": "#86EFAC",
+          "warning": "#FDE047",
+          "accent_pill": "#EA580C"
+        }
+      },
+      {
+        "name": "inverse",
+        "kind": "solid",
+        "bg": "#1C1917",
+        "on_bg": "#FAFAF9",
+        "on_bg_muted": "#A8A29E"
+      },
+      {
+        "name": "rule_box",
+        "kind": "solid",
+        "bg": "#FFFBEB",
+        "on_bg": "#78350F",
+        "on_bg_muted": "#92400E",
+        "roles": {
+          "border": "#FDE68A"
+        }
+      },
+      {
+        "name": "grammar_highlight",
+        "kind": "solid",
+        "bg": "#FEF2F2",
+        "on_bg": "#991B1B",
+        "on_bg_muted": "#7F1D1D",
+        "roles": {
+          "border": "#FECACA"
+        }
+      },
+      {
+        "name": "tip_box",
+        "kind": "solid",
+        "bg": "#F0FDF4",
+        "on_bg": "#14532D",
+        "on_bg_muted": "#166534",
+        "roles": {
+          "border": "#BBF7D0"
+        }
+      },
+      {
+        "name": "quiz_active_card",
+        "kind": "solid",
+        "bg": "#EFF6FF",
+        "on_bg": "#1E3A8A",
+        "on_bg_muted": "#1E40AF",
+        "roles": {
+          "border": "#BFDBFE"
+        }
+      }
+    ],
+    "accent": "#C2410C",
+    "on_accent": "#FFFFFF",
+    "secondary_accent": "#1E3A8A",
+    "on_secondary_accent": "#FFFFFF"
+  },
+  "typography": {
+    "font_family_heading": "Lora, 'Noto Serif Devanagari', Georgia, serif",
+    "font_family_body": "Plus Jakarta Sans, 'Noto Sans Devanagari', sans-serif",
+    "font_family_mono": "JetBrains Mono, monospace",
+    "scale_px": {
+      "display": 56,
+      "h1": 42,
+      "h2": 32,
+      "h3": 24,
+      "h4": 20,
+      "body": 16,
+      "caption": 14
+    },
+    "letter_spacing": {
+      "heading": "tracking-tight",
+      "body": "tracking-normal",
+      "overline": "tracking-widest uppercase"
+    },
+    "line_height": {
+      "heading": "leading-tight",
+      "body": "leading-relaxed"
+    }
+  },
+  "entry_surfaces": {
+    "/": "split academic hero — SKMU Dumka AEC Hindi curriculum positioning + exam scheme pill left, interactive study overview with unit cards & live progress widget right",
+    "/ikai/1": "unit header with syllabus outcome banner + 5 comprehensive writing modules (Letter types + Essay topics) with progress checklists",
+    "/ikai/2": "grammar master dashboard — 12 core grammar topics categorized with search filter, difficulty badges, and quick-read counters",
+    "/vishay/:slug": "editorial textbook reading screen — left quick-jump outline, central rich content renderer with tables/examples/exam tips, bottom previous/next topic pagination + mark as completed button",
+    "/abhyas": "interactive MCQ quiz suite — topic selector bar + dynamic question runner with instant explanation reveal, score gauge and review mode",
+    "/pariksha": "official exam scheme blueprint — 50 marks Group A & B breakdown, passing marks rulebook, revealable Group A 1-mark question bank + Group B 15-mark model answers"
+  },
+  "grids_and_layouts": {
+    "container_max_width": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "hero_layout": "grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center py-10 lg:py-16",
+    "topic_grid": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
+    "reading_layout": "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start",
+    "reading_sidebar": "lg:col-span-3 sticky top-20 space-y-4",
+    "reading_content": "lg:col-span-9 bg-white border border-[#E7DFD5] rounded-2xl p-6 sm:p-10 shadow-sm",
+    "exam_scheme_grid": "grid grid-cols-1 md:grid-cols-2 gap-6 my-8"
+  },
+  "media": {
+    "image_urls": {
+      "hero_study_banner": "https://images.pexels.com/photos/16504592/pexels-photo-16504592.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "university_reading": "https://images.pexels.com/photos/16504588/pexels-photo-16504588.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "calligraphy_paper": "https://images.pexels.com/photos/9247613/pexels-photo-9247613.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "students_group": "https://images.unsplash.com/photo-1637589316488-6d4c41b335cd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODh8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBzdHVkZW50cyUyMHJlYWRpbmclMjBsaWJyYXJ5JTIwc3R1ZHl8ZW58MHx8fHwxNzg5ODQyNTYzfDA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "motion": {
+    "library": "motion (framer-motion compatible)",
+    "page_transitions": "initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: 'easeOut' }}",
+    "stagger_cards": "staggerChildren: 0.05",
+    "respect_reduced_motion": "Wrap animations with `prefers-reduced-motion` checks or use CSS micro-transitions (e.g. `transition-transform duration-200`)"
+  },
+  "accessibility": {
+    "wcag_level": "WCAG AA / APCA standards",
+    "data_testid_convention": "All buttons, navigation links, filters, question choices, answer reveal buttons, progress toggles, search bars MUST have explicit data-testid in kebab-case (e.g., 'nav-home-link', 'btn-mark-read', 'quiz-option-A', 'btn-reveal-answer', 'filter-unit-1').",
+    "aria_labels": "All icon-only buttons (like bookmark, sound, theme toggle, copy link) must have aria-label in Hindi/English.",
+    "keyboard_nav": "Quiz choices must be navigable with Tab and selectable with Enter/Space."
+  },
+  "instructions_to_main_agent": {
+    "syllabus_coverage_mandate": "CRITICAL: Build exhaustive Hindi content covering every topic from SKMU Dumka AEC Hindi Syllabus without abbreviations or placeholders: Unit 1 (पत्र लेखन: औपचारिक, अनौपचारिक, आवेदन, व्यावसायिक, संपादक + निबंध: पर्यावरण, नैतिकता, विज्ञान, स्वास्थ्य, राष्ट्रीयता) and Unit 2 (संधि [स्वर, व्यंजन, विसर्ग with 40+ examples], समास [6 भेद + 50+ examples], वर्ण विचार, वाक्य शुद्धि [40+ शुद्ध-अशुद्ध pairs], मुहावरे [60+ with अर्थ & वाक्य], लोकोक्तियाँ [40+ with अर्थ], कारक-विभक्ति [8 कारक table with चिह्नों], उपसर्ग [संस्कृत, हिंदी, उर्दू], प्रत्यय [कृत् व तद्धित], पल्लवन [नियम + 4 उदाहरण], संक्षेपण [विधि + उदाहरण], अनेक शब्दों के लिए एक शब्द [60+ list]).",
+    "exam_structure_mandate": "Ensure /pariksha page includes official SKMU Dumka AEC Hindi 50-mark pattern: Duration 1.5 Hours, Pass Marks 20. Group A (Compulsory 5 very short questions × 1 = 5 marks) with interactive revealable model answers. Group B (6 descriptive questions of 15 marks each, student to attempt any 3 = 45 marks) with detailed model structure, key scoring points, and sample high-scoring answers.",
+    "quiz_engine_mandate": "The /abhyas page must support topic filtering (or full mock exam mode), timer, instant explanation, score summary with performance feedback, and review incorrect answers.",
+    "progress_tracking_mandate": "Store completed topics and quiz high scores in localStorage so student progress is remembered across browser sessions.",
+    "offline_resilience": "Seed all content in rich frontend data structures or backend seed models so the app runs fully and seamlessly in both API-connected and standalone CDN preview mode."
+  },
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": {
+    "avoid_ai_slop": "Do not create empty generic centered layouts. Use rich editorial typography, warm ivory/terracotta academic palette, clear tables, example cards, and thoughtful Indian academic branding (सिदो कान्हू मुर्मू विश्वविद्यालय, दुमका AEC हिंदी व्याकरण अध्ययन मंच).",
+    "no_universal_transition": "Never use `transition: all`. Use specific `transition-colors`, `transition-transform duration-150`.",
+    "data_testids": "Ensure full coverage of data-testid on every interactive element."
+  }
+}
